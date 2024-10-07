@@ -65,7 +65,7 @@ const initialState = {
   searchType: 'all',
   sort: 'latest',
   sortOptions: ['latest', 'oldest', 'a-z', 'z-a'],
-};
+}
 
 const AppContext = React.createContext();
 
@@ -75,7 +75,7 @@ export default function AppProvider(props) {
 
   // Axios custom instance
   const authFetch = axios.create({
-    baseURL: 'https://job-server-vo2k.onrender.com/api/v1', // Updated base URL
+    baseURL: '/api/v1',
   });
 
   // Axios response interceptor
@@ -102,21 +102,22 @@ export default function AppProvider(props) {
     setTimeout(() => {
       dispatch({
         type: CLEAR_ALERT,
-      });
-    }, 4000);
+      })
+    }, 4000)
   };
 
   const displayAlert = () => {
     dispatch({
-      type: DISPLAY_ALERT,
+      type: DISPLAY_ALERT
     });
     clearAlert();
   };
 
   const registerUser = async (currentUser) => {
     dispatch({ type: REGISTER_USER_BEGIN });
-    try {
-      const response = await authFetch.post('/auth/register', currentUser);
+    try{
+
+      const response = await axios.post('/api/v1/auth/register', currentUser);
       const { user, location } = response.data;
 
       dispatch({
@@ -124,19 +125,24 @@ export default function AppProvider(props) {
         payload: { user, location },
       });
       
-    } catch (error) {
-      dispatch({
+    } catch(error){
+
+      dispatch( {
         type: REGISTER_USER_ERROR,
         payload: { msg: error.response.data.msg },
-      });
+      })
     }
     clearAlert();
   };
 
   const loginUser = async (currentUser) => {
     dispatch({ type: LOGIN_USER_BEGIN });
-    try {
-      const { data } = await authFetch.post('/auth/login', currentUser);
+    try{
+      const { data } = await axios.post(
+        '/api/v1/auth/login',
+        currentUser
+      );
+
       const { user, location } = data;
 
       dispatch({
@@ -144,11 +150,11 @@ export default function AppProvider(props) {
         payload: { user, location },
       });
 
-    } catch (error) {
-      dispatch({
+    } catch(error){
+      dispatch( {
         type: LOGIN_USER_ERROR,
         payload: { msg: error.response.data.msg },
-      });
+      })
     }
     clearAlert();
   };
@@ -159,10 +165,12 @@ export default function AppProvider(props) {
   };
   
   const updateUser = async (currentUser) => {
+    
     dispatch({ type: UPDATE_USER_BEGIN });
     
-    try {
+    try{
       const { data } = await authFetch.patch('/auth/updateUser', currentUser);
+      
       const { user, location } = data;
 
       dispatch({
@@ -170,7 +178,7 @@ export default function AppProvider(props) {
         payload: { user, location },
       });
 
-    } catch (error) {
+    } catch(error) {
       if(error.response.status !== 401){
         dispatch({
           type: UPDATE_USER_ERROR,
@@ -201,8 +209,14 @@ export default function AppProvider(props) {
   const createJob = async () => {
     dispatch({ type: CREATE_JOB_BEGIN });
 
-    try {
-      const { position, company, jobLocation, jobType, status } = state;
+    try{
+      const { 
+        position, 
+        company, 
+        jobLocation, 
+        jobType, 
+        status 
+      } = state;
 
       await authFetch.post('/jobs', {
         position, 
@@ -215,8 +229,8 @@ export default function AppProvider(props) {
       dispatch({ type: CREATE_JOB_SUCCESS });
       dispatch({ type: CLEAR_VALUES });
 
-    } catch (error) {
-      if(error.response.status === 401) {
+    } catch(error){
+      if(error.response === 401) {
         return;
       }
 
@@ -229,19 +243,26 @@ export default function AppProvider(props) {
     clearAlert();
   };
 
+  
   const getJobs = async () => {
+    // Destructure variables that deals with search parameters
     const { search, searchStatus, searchType, sort, page } = state;
+
+    // let url = `/jobs`;
+    // let url = `/jobs?status=${searchStatus}&jobType=${searchType}&sort=${sort}`;
     let url = `/jobs?page=${page}&status=${searchStatus}&jobType=${searchType}&sort=${sort}`;
     
-    if (search) {
-      url += `&search=${search}`;
+    // If `search` is non-empty, appended it to the URL
+    if(search) {
+      url = url + `&search=${search}`;
     }
     
     dispatch({ type: GET_JOBS_BEGIN });
 
     try {
-      const { data } = await authFetch(url);
-      const { jobs, totalJobs, numOfPages } = data;
+      const data = await authFetch(url);
+
+      const { jobs, totalJobs, numOfPages } = data.data;
 
       dispatch({
         type: GET_JOBS_SUCCESS,
@@ -252,7 +273,7 @@ export default function AppProvider(props) {
         },
       });
 
-    } catch (error) {
+    } catch(error){
       console.log(`Error triggered in getJobs() appContext.js! 
       Here is the Error Response:
       ${error.response}`);
@@ -282,16 +303,17 @@ export default function AppProvider(props) {
       });
 
       dispatch({ type: EDIT_JOB_SUCCESS });
+
       dispatch({ type: CLEAR_VALUES });
 
-    } catch (error) {
-      if (error.response.status === 401) {
+    } catch(error){
+      if(error.response.status === 401) {
         return;
       }
       dispatch({
         type: EDIT_JOB_ERROR,
         payload: { msg: error.response.data.msg },
-      });
+      })
     }
     clearAlert();
   };
@@ -310,19 +332,21 @@ export default function AppProvider(props) {
   const showStats = async () => {
     dispatch({ type: SHOW_STATS_BEGIN });
     const url = '/jobs/stats';
-    try {
+    try{
       const { data } = await authFetch(url);
+  
       dispatch({
         type: SHOW_STATS_SUCCESS,
         payload: {
           stats: data.defaultStats,
           monthlyApplications: data.monthlyApplications,
         },
-      });
-    } catch (error) {
+      })
+    } catch(error){
       console.log(error.response);
       logoutUser();
     }
+  
     clearAlert();
   };
 
@@ -337,10 +361,11 @@ export default function AppProvider(props) {
     });
   };
 
+  
   const getCurrentUser = async () => {
     dispatch({ type: GET_CURRENT_USER_BEGIN });
     
-    try {
+    try{
       const { data } = await authFetch('/auth/getCurrentUser');
       const { user, location } = data;
 
@@ -349,7 +374,7 @@ export default function AppProvider(props) {
         payload: { user, location },
       });
 
-    } catch (error) {
+    } catch(error) {
       if(error.response.status === 401) {
         return;
       }
@@ -363,7 +388,7 @@ export default function AppProvider(props) {
 
   return (
     <AppContext.Provider 
-      value={{
+      value = {{
         ...state,
         displayAlert,
         registerUser,
@@ -389,7 +414,7 @@ export default function AppProvider(props) {
 }
 
 const useAppContext = () => {
-  return useContext(AppContext);
+  return useContext(AppContext)
 }
 
 export { initialState, useAppContext }
