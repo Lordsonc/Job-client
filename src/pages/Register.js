@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alert, FormRow, Logo } from '../components';
 import Wrapper from '../assets/wrappers/RegisterPage';
 import { useAppContext } from '../context/appContext';
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const initialState = {
@@ -18,33 +17,36 @@ export default function Register() {
   const { user, isLoading, showAlert, displayAlert, registerUser, loginUser } = useAppContext();
 
   const handleChange = (e) => {
-    setValues({...values, [e.target.name]: e.target.value });
+    setValues({ ...values, [e.target.name]: e.target.value });
   };
 
-  const onSubmit = (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
     const { name, email, password, isMember } = values;
 
-    if( !email || !password || (!isMember && !name)){
+    if (!email || !password || (!isMember && !name)) {
       displayAlert();
       return; 
     }
 
     const currentUser = { name, email, password };
 
-    if(isMember){
-      loginUser(currentUser);
+    if (isMember) {
+      await loginUser(currentUser); // Await the login function
+      if (user) { // Check if user is defined after login
+        navigate('/dashboard'); // Redirect to dashboard
+      }
     } else {
-      registerUser(currentUser);
+      await registerUser(currentUser); // Handle registration
     }
   };
 
   const toggleMember = () => {
-    setValues({ ...values, isMember: !values.isMember })
+    setValues({ ...values, isMember: !values.isMember });
   };
 
   useEffect(() => {
-    if(user){
+    if (user) {
       setTimeout(() => {
         navigate('/');
       }, 2500);
@@ -54,12 +56,11 @@ export default function Register() {
   return (
     <Wrapper className='full-page'>
       <form className='form' onSubmit={onSubmit} action="">
-       <img src={Logo} alt="" />
-        <Logo sty  />
+        <img src={Logo} alt="" />
         <h3>{values.isMember ? "Log In" : "Register"}</h3>
         {showAlert && <Alert />}
 
-        { !values.isMember && (
+        {!values.isMember && (
           <FormRow
             type="text"
             name="name"
@@ -90,11 +91,10 @@ export default function Register() {
             type='button'
             onClick={toggleMember}
             className="member-btn">
-            { values.isMember ? 'Register' : 'Log In' }
+            {values.isMember ? 'Register' : 'Log In'}
           </button>
         </p>
-
       </form>
     </Wrapper>
-  )
+  );
 }
