@@ -392,4 +392,4 @@ const useAppContext = () => {
   return useContext(AppContext);
 }
 
-export
+export { initialState, useAppContext }
