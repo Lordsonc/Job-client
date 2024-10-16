@@ -69,6 +69,7 @@ export default function Register() {
               id="name"
               value={values.name}
               onChange={handleChange}
+              autoComplete="name" // Add autocomplete attribute
             />
           </div>
         )}
@@ -81,6 +82,7 @@ export default function Register() {
             id="email"
             value={values.email}
             onChange={handleChange}
+            autoComplete="email" // Add autocomplete attribute
           />
         </div>
 
@@ -92,6 +94,7 @@ export default function Register() {
             id="password"
             value={values.password}
             onChange={handleChange}
+            autoComplete="new-password" // Add autocomplete attribute
           />
         </div>
 
