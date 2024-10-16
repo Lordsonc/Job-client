@@ -9,7 +9,7 @@ const initialState = {
   email: '',
   password: '',
   isMember: true,
-};
+}
 
 export default function Register() {
   const navigate = useNavigate();
@@ -22,7 +22,6 @@ export default function Register() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted', values); // Debugging log
     const { name, email, password, isMember } = values;
 
     if (!email || !password || (!isMember && !name)) {
@@ -33,17 +32,12 @@ export default function Register() {
     const currentUser = { name, email, password };
 
     if (isMember) {
-      await loginUser(currentUser);
-      console.log('Logged in user:', user); // Debugging log
-      if (user) {
-        navigate('/dashboard');
+      await loginUser(currentUser); // Await the login function
+      if (user) { // Check if user is defined after login
+        navigate('/dashboard'); // Redirect to dashboard
       }
     } else {
-      await registerUser(currentUser);
-      console.log('Registered user:', user); // Debugging log
-      if (user) { // Check if user is defined after registration
-        navigate('/dashboard'); // Redirect to dashboard after registration
-      }
+      await registerUser(currentUser); // Handle registration
     }
   };
 
