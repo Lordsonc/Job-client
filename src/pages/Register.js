@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, Logo } from '../components';
+import { Alert, FormRow, Logo } from '../components';
 import Wrapper from '../assets/wrappers/RegisterPage';
 import { useAppContext } from '../context/appContext';
 import { useNavigate } from 'react-router-dom';
@@ -9,7 +9,7 @@ const initialState = {
   email: '',
   password: '',
   isMember: true,
-}
+};
 
 export default function Register() {
   const navigate = useNavigate();
@@ -22,6 +22,7 @@ export default function Register() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submitted', values); // Debugging log
     const { name, email, password, isMember } = values;
 
     if (!email || !password || (!isMember && !name)) {
@@ -32,12 +33,17 @@ export default function Register() {
     const currentUser = { name, email, password };
 
     if (isMember) {
-      await loginUser(currentUser); // Await the login function
-      if (user) { // Check if user is defined after login
-        navigate('/dashboard'); // Redirect to dashboard
+      await loginUser(currentUser);
+      console.log('Logged in user:', user); // Debugging log
+      if (user) {
+        navigate('/dashboard');
       }
     } else {
-      await registerUser(currentUser); // Handle registration
+      await registerUser(currentUser);
+      console.log('Registered user:', user); // Debugging log
+      if (user) { // Check if user is defined after registration
+        navigate('/dashboard'); // Redirect to dashboard after registration
+      }
     }
   };
 
@@ -55,50 +61,35 @@ export default function Register() {
 
   return (
     <Wrapper className='full-page'>
-      <form className='form' onSubmit={onSubmit}>
+      <form className='form' onSubmit={onSubmit} action="">
         <img src={Logo} alt="" />
         <h3>{values.isMember ? "Log In" : "Register"}</h3>
         {showAlert && <Alert />}
 
         {!values.isMember && (
-          <div className="form-row">
-            <label htmlFor="name">Name</label>
-            <input
-              type="text"
-              name="name"
-              id="name"
-              value={values.name}
-              onChange={handleChange}
-              autoComplete="name" // Add autocomplete attribute
-            />
-          </div>
+          <FormRow
+            type="text"
+            name="name"
+            value={values.name}
+            handleChange={handleChange}
+          />
         )}
 
-        <div className="form-row">
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            name="email"
-            id="email"
-            value={values.email}
-            onChange={handleChange}
-            autoComplete="email" // Add autocomplete attribute
-          />
-        </div>
+        <FormRow
+          type="email"
+          name="email"
+          value={values.email}
+          handleChange={handleChange}
+        />
 
-        <div className="form-row">
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            name="password"
-            id="password"
-            value={values.password}
-            onChange={handleChange}
-            autoComplete="new-password" // Add autocomplete attribute
-          />
-        </div>
+        <FormRow
+          type="password"
+          name="password"
+          value={values.password}
+          handleChange={handleChange}
+        />
 
-        <button type="submit" className="btn btn-block" disabled={isLoading}>Submit</button>
+        <button type="submit" className="btn btn-block" disabled={isLoading}>submit</button>
 
         <p>
           {values.isMember ? "Not a member yet?" : "Already a member?"}
