@@ -1,5 +1,4 @@
-import React from 'react';
-import { useReducer, useContext, useEffect } from 'react';
+import React, { useReducer, useContext, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import reducer from './reducer';
 import { 
@@ -73,9 +72,11 @@ export default function AppProvider(props) {
   const { children } = props;
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  // Axios custom instance with your backend URL
+  // Axios custom instance
+  const BACKEND_URL = 'https://job-server-vo2k.onrender.com/api/v1'; // Your backend URL
   const authFetch = axios.create({
-    baseURL: 'https://job-server-vo2k.onrender.com/api/v1', // Updated base URL
+    baseURL: BACKEND_URL,
+    withCredentials: true, // Enable cookies with requests
   });
 
   // Axios response interceptor
@@ -89,7 +90,7 @@ export default function AppProvider(props) {
       error: ${error}
       error.response: ${error.response}`);
 
-      if(error.response.status === 401){
+      if (error.response && error.response.status === 401) {
         console.log('Authentication Error');
         logoutUser();
       }
@@ -103,7 +104,7 @@ export default function AppProvider(props) {
       dispatch({
         type: CLEAR_ALERT,
       })
-    }, 4000)
+    }, 4000);
   };
 
   const displayAlert = () => {
@@ -116,14 +117,14 @@ export default function AppProvider(props) {
   const registerUser = async (currentUser) => {
     dispatch({ type: REGISTER_USER_BEGIN });
     try {
-      const response = await authFetch.post('/auth/register', currentUser); // Use authFetch
+      const response = await authFetch.post('/auth/register', currentUser); // Use authFetch to send cookies
       const { user, location } = response.data;
 
       dispatch({
         type: REGISTER_USER_SUCCESS,
         payload: { user, location },
       });
-      
+
     } catch (error) {
       dispatch({
         type: REGISTER_USER_ERROR,
@@ -136,9 +137,8 @@ export default function AppProvider(props) {
   const loginUser = async (currentUser) => {
     dispatch({ type: LOGIN_USER_BEGIN });
     try {
-      const { data } = await authFetch.post('/auth/login', currentUser); // Use authFetch
-
-      const { user, location } = data;
+      const response = await authFetch.post('/auth/login', currentUser); // Use authFetch to send cookies
+      const { user, location } = response.data;
 
       dispatch({
         type: LOGIN_USER_SUCCESS,
@@ -163,7 +163,7 @@ export default function AppProvider(props) {
     dispatch({ type: UPDATE_USER_BEGIN });
     
     try {
-      const { data } = await authFetch.patch('/auth/updateUser', currentUser);
+      const { data } = await authFetch.patch('/auth/updateUser', currentUser); // Use authFetch to send cookies
       
       const { user, location } = data;
 
@@ -173,7 +173,7 @@ export default function AppProvider(props) {
       });
 
     } catch (error) {
-      if (error.response.status !== 401) {
+      if (error.response && error.response.status !== 401) {
         dispatch({
           type: UPDATE_USER_ERROR,
           payload: { msg: error.response.data.msg },
@@ -212,7 +212,7 @@ export default function AppProvider(props) {
         status 
       } = state;
 
-      await authFetch.post('/jobs', {
+      await authFetch.post('/jobs', { // Use authFetch to send cookies
         position, 
         company, 
         jobLocation, 
@@ -224,7 +224,7 @@ export default function AppProvider(props) {
       dispatch({ type: CLEAR_VALUES });
 
     } catch (error) {
-      if (error.response === 401) {
+      if (error.response && error.response.status === 401) {
         return;
       }
 
@@ -238,20 +238,17 @@ export default function AppProvider(props) {
   };
 
   const getJobs = async () => {
-    // Destructure variables that deal with search parameters
     const { search, searchStatus, searchType, sort, page } = state;
-
     let url = `/jobs?page=${page}&status=${searchStatus}&jobType=${searchType}&sort=${sort}`;
     
-    // If `search` is non-empty, append it to the URL
     if (search) {
-      url += `&search=${search}`;
+      url = url + `&search=${search}`;
     }
     
     dispatch({ type: GET_JOBS_BEGIN });
 
     try {
-      const data = await authFetch(url);
+      const data = await authFetch(url); // Use authFetch to send cookies
 
       const { jobs, totalJobs, numOfPages } = data.data;
 
@@ -285,7 +282,7 @@ export default function AppProvider(props) {
     try {
       const { position, company, jobLocation, jobType, status } = state;
 
-      await authFetch.patch(`/jobs/${state.editJobId}`, {
+      await authFetch.patch(`/jobs/${state.editJobId}`, { // Use authFetch to send cookies
         company,
         position,
         jobLocation,
@@ -297,7 +294,7 @@ export default function AppProvider(props) {
       dispatch({ type: CLEAR_VALUES });
 
     } catch (error) {
-      if (error.response.status === 401) {
+      if (error.response && error.response.status === 401) {
         return;
       }
       dispatch({
@@ -312,7 +309,7 @@ export default function AppProvider(props) {
     dispatch({ type: DELETE_JOB_BEGIN });
 
     try {
-      await authFetch.delete(`/jobs/${jobId}`);
+      await authFetch.delete(`/jobs/${jobId}`); // Use authFetch to send cookies
       getJobs();
     } catch (error) {
       console.log(error.response);
@@ -323,7 +320,7 @@ export default function AppProvider(props) {
     dispatch({ type: SHOW_STATS_BEGIN });
     const url = '/jobs/stats';
     try {
-      const { data } = await authFetch(url);
+      const { data } = await authFetch(url); // Use authFetch to send cookies
   
       dispatch({
         type: SHOW_STATS_SUCCESS,
@@ -331,7 +328,7 @@ export default function AppProvider(props) {
           stats: data.defaultStats,
           monthlyApplications: data.monthlyApplications,
         },
-      });
+      })
     } catch (error) {
       console.log(error.response);
       logoutUser();
@@ -342,7 +339,7 @@ export default function AppProvider(props) {
 
   const clearFilters = () => {
     dispatch({ type: CLEAR_FILTERS });
-  };
+  }
 
   const changePage = (page) => {
     dispatch({
@@ -351,12 +348,11 @@ export default function AppProvider(props) {
     });
   };
 
-  
   const getCurrentUser = async () => {
     dispatch({ type: GET_CURRENT_USER_BEGIN });
     
     try {
-      const { data } = await authFetch('/auth/getCurrentUser');
+      const { data } = await authFetch('/auth/getCurrentUser'); // Use authFetch to send cookies
       const { user, location } = data;
 
       dispatch({
@@ -365,7 +361,7 @@ export default function AppProvider(props) {
       });
 
     } catch (error) {
-      if (error.response.status === 401) {
+      if (error.response && error.response.status === 401) {
         return;
       }
       logoutUser();
@@ -404,7 +400,7 @@ export default function AppProvider(props) {
 }
 
 const useAppContext = () => {
-  return useContext(AppContext);
+  return useContext(AppContext)
 }
 
 export { initialState, useAppContext };
